@@ -12,12 +12,12 @@ productive fellow.
 
 - Ping (returns Pong!; good for testing connectivity)
 - Dice Roller (`!roll 2d4` -> `Roll: 2d4 ([2, 1]) ==> 3`)
-- Ad-hoc simple custom commands (`!addcommand hello Hey there!` --> `!hello` -->
-    `Hey there!`)
 - More to come!
 
 ## Planned Features
 
+- [ ] Ad-hoc simple custom commands (`!addcommand hello Hey there!` --> `!hello` -->
+    `Hey there!`)
 - [ ] 8-ball (`!8ball Will I win the lottery?` --> `Try again later`)
 - [ ] Simple calculator (`!calc 8 + (9-10)` --> `Calc: 8 + (9 - 10) ==> 7`)
 - [ ] Simple games (Blackjack, High/Low)
@@ -38,7 +38,7 @@ You can run your own instance of Chronicle with a few steps:
 3. Export the access token to CHRONICLE_ACCESS_TOKEN for ease of use
 4. Run `bundle update` to install dependencies.
 5. Run `bundle exec chronicle -d <your-homeserver-address-here>
-   <access-token-here>`
+   CHRONICLE_ACCESS_TOKEN`
 6. Invite the bot user to a room, and `!ping` to make sure it's working!
 
 # Contribute
