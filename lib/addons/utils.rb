@@ -15,6 +15,18 @@ module Chronicle
         @bot = bot
       end
 
+      # Provide help information for this command
+      #
+      # @param message [Message object] The relevant message object
+      def help_command(message)
+        room = @bot.client.ensure_room(message.room_id)
+
+        res = 'Returns "Pong!"'
+        res += "\nUsage: !ping"
+
+        room.send_notice(res)
+      end
+
       # Handle a command from the Matrix protocol
       #
       # @param message [Message object] The relevant message object
@@ -36,6 +48,18 @@ module Chronicle
 
       def initialize(bot)
         @bot = bot
+      end
+
+      # Provide help information for this command
+      #
+      # @param message [Message object] The relevant message object
+      def help_command(message)
+        room = @bot.client.ensure_room(message.room_id)
+
+        res = 'Questions the fates to determine an answer for your question.'
+        res += "\nUsage: !8ball QUESTION"
+
+        room.send_notice(res)
       end
 
       # Handle a command from the Matrix protocol

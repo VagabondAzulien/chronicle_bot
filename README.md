@@ -10,8 +10,10 @@ productive fellow.
 
 ## Features
 
-- Ping (returns Pong!; good for testing connectivity)
-- Dice Roller (`!roll 2d4` -> `Roll: 2d4 ([2, 1]) ==> 3`)
+- List available commands (`!listcommands`) and get help with them (`!help
+    [COMMAND]`)
+- Ping (returns `Pong!`; good for testing connectivity)
+- Dice Roller (`!roll 2d4` --> `Roll: 2d4 ([2, 1]) ==> 3`)
 - 8-ball (`!8ball Will I win the lottery?` --> `Try again later`)
 - Ad-hoc simple custom commands (`!addcommand hello Hey there!` --> `!hello` -->
   `Hey there!`)

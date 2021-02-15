@@ -25,6 +25,31 @@ module Chronicle
         @bot.available_commands(self, @custom_commands.keys)
       end
 
+      # Provide help for the commands of this addon
+      #
+      # @param message [Message object] The relevant message object
+      def help_command(message)
+        pfx = @bot.cmd_prefix
+        cmd = message.content[:body].split(/\s+/)[1].gsub(/#{pfx}/, '')
+
+        res = 'Invalid command'
+
+        case cmd
+        when "addcommand"
+          res = cmd_add_usage
+        when "modcommand"
+          res = cmd_mod_usage
+        when "remcommand"
+          res = cmd_rem_usage
+        else
+          res = cmd_custom_usage(cmd)
+        end
+
+        room = @bot.client.ensure_room(message.room_id)
+
+        room.send_notice(res)
+      end
+
       # Handle a command from the Matrix protocol
       #
       # @param message [Message object] The relevant message object
@@ -152,6 +177,18 @@ module Chronicle
         "You can modify it by typing `!modcommand #{command}`"
       end
 
+      # Help message for addcommand
+      def cmd_add_usage
+        'Add a custom command. '\
+        "\nUsage: !addcommand COMMAND TEXT"
+      end
+
+      # Help message for modcommand
+      def cmd_custom_usage(cmd)
+        'Prints text associated with the custom command'\
+        "\nUsage: !#{cmd}"
+      end
+
       # Error message when trying to add an existing command
       def cmd_addon_error
         'This command is already used by another addon.'
@@ -163,10 +200,22 @@ module Chronicle
         "You can add it by typing `!addcommand #{command}`"
       end
 
+      # Help message for modcommand
+      def cmd_mod_usage
+        'Modify a custom command. '\
+        "\nUsage: !modcommand EXISTING-COMMAND TEXT"
+      end
+
       # Error message when trying to delete a non-existing command
       def cmd_rem_error
         'This custom command does not exist. '\
         'Nothing to remove.'
+      end
+
+      # Help message for modcommand
+      def cmd_rem_usage
+        'Remove a custom command. '\
+        "\nUsage: !remcommand EXISTING-COMMAND"
       end
 
       # Read the existing saved commands into memory

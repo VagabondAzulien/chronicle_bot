@@ -59,6 +59,7 @@ module Chronicle
         @allowed_commands = {}
 
         register_commands
+        available_commands(self, ['listcommands', 'help'])
       end
 
       # All available commands
@@ -84,6 +85,47 @@ module Chronicle
         commands.each do |command|
           @all_commands.delete(command)
         end
+      end
+
+      def help_command(message)
+        pfx = @cmd_prefix
+        cmd = message.content[:body].split(/\s+/)[1].gsub(/#{pfx}/, '')
+
+        case cmd
+        when 'listcommands'
+          res = '!listcommands: List available commands managed by this bot'
+        else
+          res = 'Try !listcommands or !help'
+        end
+
+        res
+      end
+
+      # Handle a command from the Matrix protocol
+      #
+      # @param message [Message object] The relevant message object
+      def matrix_command(message)
+        pfx = @cmd_prefix
+        cmd = message.content[:body].split(/\s+/)[0].gsub(/#{pfx}/, '')
+
+        res = 'Invalid command'
+
+        case cmd
+        when 'listcommands'
+          res = 'Currently available commands: '
+          res += @all_commands.keys.join(', ')
+        when 'help'
+          res = if message.content[:body].split(/\s+/).count <= 1
+                  '!help: Get help for a specific command' \
+                  "\nUsage: !help COMMAND"
+                else
+                  second_cmd = message.content[:body].split(/\s+/)[1].gsub(/#{pfx}/, '')
+                  res = @all_commands[second_cmd.strip].help_command(message)
+                end
+        end
+
+        room = @client.ensure_room(message.room_id)
+        room.send_notice(res)
       end
 
       def on_message(message)
