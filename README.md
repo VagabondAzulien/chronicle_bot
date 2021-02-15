@@ -13,12 +13,12 @@ productive fellow.
 - Ping (returns Pong!; good for testing connectivity)
 - Dice Roller (`!roll 2d4` -> `Roll: 2d4 ([2, 1]) ==> 3`)
 - 8-ball (`!8ball Will I win the lottery?` --> `Try again later`)
+- Ad-hoc simple custom commands (`!addcommand hello Hey there!` --> `!hello` -->
+  `Hey there!`)
 - More to come!
 
 ## Planned Features
 
-- [ ] Ad-hoc simple custom commands (`!addcommand hello Hey there!` --> `!hello` -->
-    `Hey there!`)
 - [ ] Simple calculator (`!calc 8 + (9-10)` --> `Calc: 8 + (9 - 10) ==> 7`)
 - [ ] Simple games (Blackjack, High/Low)
 - [ ] A "mystery" game (Kind of like _Clue!_ or _Noir Syndrome_)
