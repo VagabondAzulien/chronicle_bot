@@ -1,30 +1,42 @@
 # frozen_string_literal: true
 
 module Chronicle
-  module Matrix
+  module Addon
     # Roll dice and get the results
-    #
-    # @param message [hash] The message data from Matrix
-    def handle_roll(client, message)
-      msgstr = message.content[:body]
-                      .gsub(/!roll\s*/, '')
-                      .strip
+    class Roller
+      def self.register(bot)
+        addon_instance = new(bot)
+        addon_command = ['roll']
 
-      room = client.ensure_room(message.room_id)
+        [addon_instance, addon_command]
+      end
 
-      res = Roller.roll(msgstr)
+      def initialize(bot)
+        @bot = bot
+      end
 
-      final_msg = res.reduce("") { |x,y| x+y+"\n" }
+      # Handle a command from the Matrix protocol
+      #
+      # @param message [hash] The message data from Matrix
+      def matrix_command(message)
+        msgstr = message.content[:body]
+                        .gsub(/!roll\s*/, '')
+                        .strip
 
-      room.send_notice(final_msg)
-    end
+        room = @bot.client.ensure_room(message.room_id)
 
-    module Roller
+        res = roll(msgstr)
+
+        final_msg = res.reduce('') { |x, y| x + y + "\n" }
+
+        room.send_notice(final_msg)
+      end
+
       # Solve an arithmatic forumla from a string
       #
       # @param string [String] The string representation of the formula
       # @return Integer of the solution
-      def self.solve(string)
+      def solve(string)
         formatted = string.gsub(/\s+/, '')
         formatted = formatted.gsub(/\[[\d,]*\]/) do |a|
           a.scan(/\d*/).reduce(0) { |x, y| x + y.to_i }
@@ -77,7 +89,7 @@ module Chronicle
       # @param string [String] The processed request
       # @param res [String] The result of the process
       # @return String re-formatted
-      def self.pretty(func, orig, string, res)
+      def pretty(func, orig, string, res)
         orig.gsub!(/[\+\-*\/]/) { |s| " #{s} " }
         string.gsub!(/[\+\-*\/]/) { |s| " #{s} " }
         "#{func.capitalize}: #{orig} (#{string}) ==> #{res}"
@@ -88,7 +100,7 @@ module Chronicle
       # @param string [String] The string representation of the dice roll
       #        example: 2d4+6
       # @return Array of the message and the result
-      def self.roll(string)
+      def roll(string)
         results = []
         string.gsub(/\s+/,'').split(',').each do |roll|
           orig = roll

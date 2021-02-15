@@ -4,13 +4,13 @@ require 'faraday'
 require 'json'
 require 'matrix_sdk'
 
+# Require any addons
+Dir[File.join(__dir__, 'addons', '*.rb')].each do |file|
+  require file
+end
+
 # Chronicle Bot
 module Chronicle
-  # Require any addons
-  Dir[File.join(__dir__, 'addons', '*.rb')].each do |file|
-    require file
-  end
-
   # A filter to simplify syncs
   BOT_FILTER = {
     presence: { types: [] },
@@ -30,23 +30,6 @@ module Chronicle
 
   # Chronicle Bot for Matrix
   module Matrix
-    @@default_allowed_commands = %w[ping]
-    @@room_allowed_commands = {}
-
-    # Update allowed commands
-    def add_allowed_commands(cmds, msgid='')
-      if msgid
-        @@room_allowed_commands[msgid].concat(cmds)
-      else
-        @@room_allowed_commands.each { |_,v| v.concat(cmds) }
-      end
-    end
-
-    # Establish or return allowed commands for a room
-    def allowed_commands(msgid)
-      @@room_allowed_commands[msgid] ||= @@default_allowed_commands
-    end
-
     # Begin the beast
     def self.start(args)
       unless args.length >= 2
@@ -65,11 +48,68 @@ module Chronicle
 
     # The bot
     class ChronicleBot
-      include Matrix
+      attr_reader :all_commands, :cmd_prefix
 
       def initialize(hs_url, access_token)
         @hs_url = hs_url
         @token = access_token
+
+        @cmd_prefix = '!'
+        @all_commands = {}
+        @allowed_commands = {}
+
+        register_commands
+      end
+
+      # All available commands
+      def available_commands(addon, commands)
+        commands.each do |command|
+          @all_commands[command] = addon
+        end
+      end
+
+      def client
+        @client ||= MatrixSdk::Client.new(
+          @hs_url,
+          access_token: @token,
+          client_cache: :all
+        )
+      end
+
+      def deep_copy(hash)
+        Marshal.load(Marshal.dump(hash))
+      end
+
+      def disable_commands(*commands)
+        commands.each do |command|
+          @all_commands.delete(command)
+        end
+      end
+
+      def on_message(message)
+        return unless message.content[:msgtype] == 'm.text'
+
+        msgstr = message.content[:body]
+        roomid = message.room_id
+        cmds = @all_commands.keys.join('|')
+
+        return unless msgstr =~ /^#{@cmd_prefix}#{cmds}\s*/
+
+        msgstr.match(/^#{@cmd_prefix}(#{cmds})\s*/) do |m|
+          @all_commands[m.to_s[1..-1].strip].matrix_command(message)
+        end
+      end
+
+      def register_commands
+        Chronicle::Addon.constants.each do |addon|
+          cmd = Object.const_get("Chronicle::Addon::#{addon.to_s}")
+
+          if cmd.methods.include?(:register)
+            instance, commands = cmd.send(:register, self)
+
+            available_commands(instance, commands)
+          end
+        end
       end
 
       # Run Chronicle
@@ -94,36 +134,6 @@ module Chronicle
             puts e
           end
         end
-      end
-
-      def on_message(message)
-        return unless message.content[:msgtype] == 'm.text'
-
-        msgstr = message.content[:body]
-        msgid = message.room_id
-        cmds = allowed_commands(msgid).join('|')
-
-        return unless msgstr =~ /^!#{cmds}\s*/
-
-        msgstr.match(/^!(#{cmds})\s*/) do |m| 
-          send(
-            "handle_#{m.to_s[1..-1].strip}",
-            client,
-            message
-          )
-        end
-      end
-
-      def client
-        @client ||= MatrixSdk::Client.new(
-          @hs_url,
-          access_token: @token,
-          client_cache: :none
-        )
-      end
-
-      def deep_copy(hash)
-        Marshal.load(Marshal.dump(hash))
       end
     end
   end
