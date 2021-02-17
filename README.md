@@ -17,6 +17,7 @@ productive fellow.
 - 8-ball (`!8ball Will I win the lottery?` --> `Try again later`)
 - Ad-hoc simple custom commands (`!addcommand hello Hey there!` --> `!hello` -->
   `Hey there!`)
+- Run in a Docker container!
 - More to come!
 
 ## Planned Features
@@ -29,20 +30,34 @@ productive fellow.
 - [ ] Enabling of add-on features (ie., everything mentioned above) per room
 - [ ] Establish/restrict command permissions per user/role per room.
 - [ ] Change the command prefix (from default `!` to whatever you'd like!)
-- [ ] Run in a Docker container!
 
 # Development
 
 You can run your own instance of Chronicle with a few steps:
 
 1. Fork the repository, and clone it locally
-2. Setup a bot user in Matrix, and get it's "Access Token" (or use your own).
-3. Export the access token to CHRONICLE_ACCESS_TOKEN for ease of use
-4. Run `bundle update` to install dependencies.
-5. Run `bundle exec chronicle -d <your-homeserver-address-here>
-   CHRONICLE_ACCESS_TOKEN`
-6. Invite the bot user to a room, and `!ping` to make sure it's working!
-7. Update the `allowed_commands` variable to add additional commands (for now).
+2. Setup a bot user in Matrix, and get its "Access Token"
+3. Export the access token to `CHRONICLE_ACCESS_TOKEN`
+4. Export your Matrix homeserver URL to `CHRONICLE_HOMESERVER`
+5. (Optional) Set `CHRONICLE_DEBUG` to 1 to get debug output
+6. Run `bundle update` to install dependencies
+7. Run `bundle exec chronicle`
+8. Invite the bot user to a room, and `!ping` to make sure it's working!
+
+# Docker
+
+The included Dockerfile is very simplistic, and may be expanded in the future.
+For now, there is no pre-built image stored in a Hub, so you'll need to build
+your own. From the project directory, `docker build -t chronicle-bot .`
+
+Export the access token to `CHRONICLE_ACCESS_TOKEN`
+Export your Matrix homeserver URL to `CHRONICLE_HOMESERVER`
+(Optional) Set `CHRONICLE_DEBUG` to 1 to get debug output
+
+Then, you can run Chronicle in Docker:
+
+`docker run --rm --name chronicle -e CHRONICLE_HOMESERVER -e
+CHRONICLE_ACCESS_TOKEN chronicle-bot`
 
 # Contribute
 
