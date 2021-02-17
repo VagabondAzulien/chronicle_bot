@@ -31,18 +31,25 @@ module Chronicle
   # Chronicle Bot for Matrix
   module Matrix
     # Begin the beast
-    def self.start(args)
-      unless args.length >= 2
-        raise "Usage: #{$PROGRAM_NAME} [-d] homeserver_url access_token"
+    def self.start
+      unless ENV["CHRONICLE_HOMESERVER"]
+        raise "Export your homeserver URL to CHRONICLE_HOMESERVER"
       end
 
-      if args.first == '-d'
+      unless ENV["CHRONICLE_ACCESS_TOKEN"]
+        raise "Export your access token to CHRONICLE_ACCESS_TOKEN"
+      end
+
+      if ENV["CHRONICLE_DEBUG"]
         Thread.abort_on_exception = true
         MatrixSdk.debug!
-        args.shift
       end
 
-      bot = ChronicleBot.new args[0], args[1]
+      bot = ChronicleBot.new(
+        ENV["CHRONICLE_HOMESERVER"],
+        ENV["CHRONICLE_ACCESS_TOKEN"]
+      )
+
       bot.run
     end
 
@@ -59,7 +66,7 @@ module Chronicle
         @allowed_commands = {}
 
         register_commands
-        available_commands(self, ['listcommands', 'help'])
+        available_commands(self, %w[listcommands help])
       end
 
       # All available commands
@@ -93,12 +100,10 @@ module Chronicle
 
         case cmd
         when 'listcommands'
-          res = '!listcommands: List available commands managed by this bot'
+          '!listcommands: List available commands managed by this bot'
         else
-          res = 'Try !listcommands or !help'
+          'Try !listcommands or !help'
         end
-
-        res
       end
 
       # Handle a command from the Matrix protocol
@@ -110,19 +115,19 @@ module Chronicle
 
         res = 'Invalid command'
 
-        case cmd
-        when 'listcommands'
-          res = 'Currently available commands: '
-          res += @all_commands.keys.join(', ')
-        when 'help'
-          res = if message.content[:body].split(/\s+/).count <= 1
+        res = case cmd
+              when 'listcommands'
+                "Currently available commands: #{@all_commands.keys.sort.join(', ')}"
+              when 'help'
+                if message.content[:body].split(/\s+/).count <= 1
                   '!help: Get help for a specific command' \
                   "\nUsage: !help COMMAND"
                 else
-                  second_cmd = message.content[:body].split(/\s+/)[1].gsub(/#{pfx}/, '')
-                  res = @all_commands[second_cmd.strip].help_command(message)
+                  second_cmd = message.content[:body].split(/\s+/)[1]
+                                      .gsub(/#{pfx}/, '')
+                  @all_commands[second_cmd.strip].help_command(message)
                 end
-        end
+              end
 
         room = @client.ensure_room(message.room_id)
         room.send_notice(res)

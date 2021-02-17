@@ -17,14 +17,10 @@ module Chronicle
 
       # Provide help information for this command
       #
-      # @param message [Message object] The relevant message object
-      def help_command(message)
-        room = @bot.client.ensure_room(message.room_id)
-
-        res = 'Returns "Pong!"'
-        res += "\nUsage: !ping"
-
-        room.send_notice(res)
+      # @param message [Message object] The relevant message object (Unused)
+      def help_command(_)
+        'Returns "Pong!"' \
+        "\nUsage: !ping"
       end
 
       # Handle a command from the Matrix protocol
@@ -52,14 +48,10 @@ module Chronicle
 
       # Provide help information for this command
       #
-      # @param message [Message object] The relevant message object
-      def help_command(message)
-        room = @bot.client.ensure_room(message.room_id)
-
-        res = 'Questions the fates to determine an answer for your question.'
-        res += "\nUsage: !8ball QUESTION"
-
-        room.send_notice(res)
+      # @param message [Message object] The relevant message object (Unused)
+      def help_command(_)
+        'Questions the fates to determine an answer for your question.' \
+        "\nUsage: !8ball QUESTION"
       end
 
       # Handle a command from the Matrix protocol

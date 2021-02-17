@@ -32,22 +32,16 @@ module Chronicle
         pfx = @bot.cmd_prefix
         cmd = message.content[:body].split(/\s+/)[1].gsub(/#{pfx}/, '')
 
-        res = 'Invalid command'
-
         case cmd
         when "addcommand"
-          res = cmd_add_usage
+          cmd_add_usage
         when "modcommand"
-          res = cmd_mod_usage
+          cmd_mod_usage
         when "remcommand"
-          res = cmd_rem_usage
+          cmd_rem_usage
         else
-          res = cmd_custom_usage(cmd)
+          cmd_custom_usage(cmd)
         end
-
-        room = @bot.client.ensure_room(message.room_id)
-
-        room.send_notice(res)
       end
 
       # Handle a command from the Matrix protocol

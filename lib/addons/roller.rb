@@ -17,15 +17,10 @@ module Chronicle
 
       # Provide help information for this command
       #
-      # @param message [Message object] The relevant message object
-      def help_command(message)
-        room = @bot.client.ensure_room(message.room_id)
-
-        res = 'Rolls dice, and provides a result'
-        res += "\nUsage: !roll DICE"
-        res += "\nExample: !roll 3d6"
-
-        room.send_notice(res)
+      # @param message [Message object] The relevant message object (Unused)
+      def help_command(_)
+        'Rolls dice, and provides a result' \
+        "\nUsage: !roll DICE\nExample: !roll 3d6"
       end
 
       # Handle a command from the Matrix protocol
