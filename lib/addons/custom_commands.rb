@@ -5,6 +5,7 @@
 # For example, "!hello" might print:
 #   "Welcome to the channel! You can follow [this link](link) to visit
 #   our website!"
+require 'active_record'
 require 'json'
 
 module Chronicle
@@ -19,10 +20,8 @@ module Chronicle
 
       def initialize(bot)
         @bot = bot
-        @msgid = 'tmp_until_per-room'
-        @custom_commands = read_commands(@msgid)
 
-        @bot.available_commands(self, @custom_commands.keys)
+        @bot.available_commands(self, list_commands)
       end
 
       # Provide help for the commands of this addon
@@ -49,6 +48,7 @@ module Chronicle
       # @param message [Message object] The relevant message object
       def matrix_command(message)
         pfx = @bot.cmd_prefix
+        roomid = message.room_id
         cmd = message.content[:body].split(/\s+/)[0].gsub(/#{pfx}/, '')
         msgstr = message.content[:body]
                         .gsub(/#{pfx}\w+\s*/, '')
@@ -58,43 +58,34 @@ module Chronicle
 
         case cmd
         when "addcommand"
-          res = handle_addcommand(msgstr)
+          res = handle_addcommand(roomid, msgstr)
         when "modcommand"
-          res = handle_modcommand(msgstr)
+          res = handle_modcommand(roomid, msgstr)
         when "remcommand"
-          res = handle_remcommand(msgstr)
+          res = handle_remcommand(roomid, msgstr)
         else
-          res = runcmd(cmd)
+          res = handle_runcommand(roomid, cmd)
         end
 
-        room = @bot.client.ensure_room(message.room_id)
+        room = @bot.client.ensure_room(roomid)
 
         room.send_notice(res)
       end
 
-      # Add a new custom command
-      def addcmd(message)
-        command = message.slice!(/\w+\s+/).strip
-
-        return cmd_add_error(command) if verify_commands(command)
-        return cmd_addon_error if addon_command(command)
-
-        @custom_commands[command] = message
-        @bot.available_commands(self, [command])
-        save_commands(@msgid)
-
-        "New command saved: !#{command}"
-      end
-
       # Adds a new custom command
       #
+      # @param roomid [string] The Matrix Room ID
       # @param message [String] The command plus response
-      # @return 
-      def handle_addcommand(message)
-        res = 'Usage: !addcommand NAME RESPONSE'
+      # @return A response message
+      def handle_addcommand(roomid, message)
+        res = cmd_add_usage
 
         if message.split(/\s+/).count > 1
-          res = addcmd(message)
+          command = message.slice!(/\w+\s+/).strip
+
+          res = save_command(roomid, command, message)
+
+          @bot.available_commands(self, [command])
         end
 
         res
@@ -102,12 +93,18 @@ module Chronicle
 
       # Modify an existing custom command
       #
+      # @param roomid [string] The Matrix Room ID
       # @param message [hash] The message data from Matrix
-      def handle_modcommand(message)
-        res = 'Usage: !modcommand NAME NEW-RESPONSE'
+      # @return A response message
+      def handle_modcommand(roomid, message)
+        res = cmd_add_usage
 
         if message.split(/\s+/).count > 1
-          res = modcmd(message)
+          command = message.slice!(/\w+\s+/).strip
+
+          res = mod_command(roomid, command, message)
+
+          @bot.available_commands(self, [command])
         end
 
         res
@@ -115,47 +112,37 @@ module Chronicle
 
       # Remove an existing custom command
       #
+      # @param roomid [string] The Matrix Room ID
       # @param message [hash] The message data from Matrix
-      def handle_remcommand(message)
-        res = 'Usage: !remcommand NAME'
+      # @return A response message
+      def handle_remcommand(roomid, message)
+        res = cmd_rem_usage
 
         if message.split(/\s+/).count == 1
-          res = remcmd(message)
+          command = message.strip
+
+          res = remove_command(roomid, command)
+
+          @bot.disable_commands(command)
         end
 
         res
       end
 
-      # Modify an existing custom command
-      def modcmd(message)
-        command = message.slice!(/\w+\s+/).strip
+      # Return the response for a custom command
+      #
+      # @param roomid [string] The Matrix Room ID
+      # @param message [hash] The message data from Matrix
+      # @return A response message
+      def handle_runcommand(roomid, message)
+        res = cmd_rem_usage
 
-        return cmd_mod_error(command) unless verify_commands(command)
+        res = CustomCommands.find_by(
+          roomid: roomid,
+          command: message.strip
+        ).response
 
-        @custom_commands[command] = message
-        save_commands(@msgid)
-
-        "!#{command} modified."
-      end
-
-      # Delete an existing custom command
-      def remcmd(message)
-        command = message.strip
-
-        return cmd_rem_error unless verify_commands(command)
-
-        @custom_commands.delete(command)
-        @bot.disable_commands(command)
-        save_commands(@msgid)
-
-        "!#{command} removed."
-      end
-
-      # Execute a custom command
-      def runcmd(command)
-        return cmd_mod_error(command) unless verify_commands(command)
-
-        @custom_commands[command]
+        res
       end
 
       private
@@ -163,12 +150,6 @@ module Chronicle
       # Check if a custom command conflicts with an existing addon command
       def addon_command(command)
         @bot.all_commands.keys.include?(command)
-      end
-
-      # Error message when trying to add an existing command
-      def cmd_add_error(command)
-        'This custom command already exists. '\
-        "You can modify it by typing `!modcommand #{command}`"
       end
 
       # Help message for addcommand
@@ -212,33 +193,84 @@ module Chronicle
         "\nUsage: !remcommand EXISTING-COMMAND"
       end
 
-      # Read the existing saved commands into memory
-      def read_commands(msgid)
-        cmds = {}
-        cmds_file = "#{msgid}_custom_commands.json"
-
-        if File.exist?(cmds_file) && !File.empty?(cmds_file)
-          File.open(cmds_file, 'r') do |f|
-            cmds = JSON.parse(f.read)
-          end
+      # List all available commands from the DB
+      def list_commands
+        commands = CustomCommands.select(:command).map do |c|
+          c.command
         end
 
-        cmds
+        commands
       end
 
-      # Save the existing commands to a local file
-      def save_commands(msgid)
-        cmds_file = "#{msgid}_custom_commands.json"
+      # Modify an existing command in the DB
+      def mod_command(roomid, command, response)
+        res = "Command updated: !#{command}"
 
-        File.open(cmds_file, 'w') do |f|
-          f.write(@custom_commands.to_json)
+        cc = CustomCommands.find_by(:command => command)
+        cc.response = response
+
+        unless cc.save
+          @bot.scribe.info('CustomCommander') {
+            "Problem modifying: #{command}. Not saved." 
+          }
+
+          return cc.errors.objects.first.full_message
         end
+        
+        @bot.scribe.info('CustomCommander') {
+          "Custom command updated: #{command}"
+        }
+
+        res
       end
 
-      # Check if a command already exists
-      def verify_commands(command)
-        @custom_commands.keys.include?(command)
+      # Remove an existing command from the DB
+      def remove_command(roomid, command)
+        res = "Command removed: !#{command}"
+
+        CustomCommands.find_by(
+          roomid: roomid,
+          command: command
+        ).delete
+
+        res
       end
+
+      # Save a new command to the DB
+      def save_command(roomid, command, response)
+        res = "Command saved: !#{command}"
+
+        cc = CustomCommands.new do |c|
+          c.roomid = roomid
+          c.command = command
+          c.response = response
+        end
+
+        unless cc.save
+          @bot.scribe.info('CustomCommander') {
+            "Duplicate command: #{command}. Not saved." 
+          }
+
+          return cc.errors.objects.first.full_message
+        end
+        
+        @bot.scribe.info('CustomCommander') {
+          "Custom command saved: #{command}"
+        }
+
+        res
+      end
+    end
+
+    # The ActiveRecord model for handling the custom commands
+    class CustomCommands < ActiveRecord::Base
+      validates_presence_of :roomid, :command, :response
+      validates_length_of :command, { minimum: 1 }
+      validates_length_of :response, { minimum: 1 }
+
+      validates :command, uniqueness: { message:
+        "already exists. You can modify it by typing `!modcommand %{value}`"
+      }
     end
   end
 end

@@ -1,6 +1,7 @@
 FROM ruby:2.7-alpine
 
 RUN bundle config --global frozen 1
+RUN apk add build-base sqlite sqlite-dev sqlite-libs
 
 WORKDIR /app
 
@@ -9,4 +10,4 @@ RUN bundle install
 
 COPY . .
 
-CMD ["./chronicle"]
+CMD ["bundle", "exec", "rake", "chronicle:start"]

@@ -1,0 +1,7 @@
+matrix:
+  homeserver: ''
+  token: ''
+
+log:
+  file: 'chronicle.log'
+  debug: 1

@@ -2,6 +2,7 @@
 
 require 'faraday'
 require 'json'
+require 'logger'
 require 'matrix_sdk'
 
 # Require any addons
@@ -11,51 +12,24 @@ end
 
 # Chronicle Bot
 module Chronicle
-  # A filter to simplify syncs
-  BOT_FILTER = {
-    presence: { types: [] },
-    account_data: { types: [] },
-    room: {
-      ephemeral: { types: [] },
-      state: {
-        types: ['m.room.*'],
-        lazy_load_members: true
-      },
-      timeline: {
-        types: ['m.room.message']
-      },
-      account_data: { types: [] }
-    }
-  }.freeze
-
   # Chronicle Bot for Matrix
   module Matrix
     # Begin the beast
     def self.start
-      unless ENV["CHRONICLE_HOMESERVER"]
-        raise "Export your homeserver URL to CHRONICLE_HOMESERVER"
-      end
-
-      unless ENV["CHRONICLE_ACCESS_TOKEN"]
-        raise "Export your access token to CHRONICLE_ACCESS_TOKEN"
-      end
-
-      if ENV["CHRONICLE_DEBUG"]
+      if Chronicle::Config.log_verbose >= 1
         Thread.abort_on_exception = true
         MatrixSdk.debug!
       end
 
-      bot = ChronicleBot.new(
-        ENV["CHRONICLE_HOMESERVER"],
-        ENV["CHRONICLE_ACCESS_TOKEN"]
-      )
-
-      bot.run
+      ChronicleBot.new(
+        Chronicle::Config.matrix_homeserver,
+        Chronicle::Config.matrix_access_token
+      ).run
     end
 
     # The bot
     class ChronicleBot
-      attr_reader :all_commands, :cmd_prefix
+      attr_reader :all_commands, :cmd_prefix, :scribe
 
       def initialize(hs_url, access_token)
         @hs_url = hs_url
@@ -65,6 +39,9 @@ module Chronicle
         @all_commands = {}
         @allowed_commands = {}
 
+        @scribe = Logger.new('chronicle.log')
+        @scribe.info('ChronicleBot') {'Initializing a new instance of Chronicle'}
+
         register_commands
         available_commands(self, %w[listcommands help])
       end
@@ -73,6 +50,7 @@ module Chronicle
       def available_commands(addon, commands)
         commands.each do |command|
           @all_commands[command] = addon
+          @scribe.info('ChronicleBot') {"Adding available command: #{command}"}
         end
       end
 
@@ -143,6 +121,10 @@ module Chronicle
         return unless msgstr =~ /^#{@cmd_prefix}#{cmds}\s*/
 
         msgstr.match(/^#{@cmd_prefix}(#{cmds})\s*/) do |m|
+          @scribe.info('ChronicleBot') {
+            "Running command: #{msgstr.split(' ')[0].strip}"
+          }
+
           @all_commands[m.to_s[1..-1].strip].matrix_command(message)
         end
       end

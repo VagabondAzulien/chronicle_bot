@@ -37,27 +37,27 @@ You can run your own instance of Chronicle with a few steps:
 
 1. Fork the repository, and clone it locally
 2. Setup a bot user in Matrix, and get its "Access Token"
-3. Export the access token to `CHRONICLE_ACCESS_TOKEN`
-4. Export your Matrix homeserver URL to `CHRONICLE_HOMESERVER`
-5. (Optional) Set `CHRONICLE_DEBUG` to 1 to get debug output
+3. Update `config/bot.yml` with the Homeserver URL, and the Access Token
+4. Update `config/db.yml` with any desired changes (defaults use SQLite)
+5. (Optional) Update `config/bot.yml` with any additional changes
 6. Run `bundle update` to install dependencies
-7. Run `bundle exec chronicle`
+7. Run `rake chronicle:start`
 8. Invite the bot user to a room, and `!ping` to make sure it's working!
 
 # Docker
 
 The included Dockerfile is very simplistic, and may be expanded in the future.
 For now, there is no pre-built image stored in a Hub, so you'll need to build
-your own. From the project directory, `docker build -t chronicle-bot .`
+your own.
 
-Export the access token to `CHRONICLE_ACCESS_TOKEN`
-Export your Matrix homeserver URL to `CHRONICLE_HOMESERVER`
-(Optional) Set `CHRONICLE_DEBUG` to 1 to get debug output
-
-Then, you can run Chronicle in Docker:
-
-`docker run --rm --name chronicle -e CHRONICLE_HOMESERVER -e
-CHRONICLE_ACCESS_TOKEN chronicle-bot`
+1. Fork the repository, and clone it locally
+2. Setup a bot user in Matrix, and get its "Access Token"
+3. Update `config/bot.yml` with the Homeserver URL, and the Access Token
+4. Update `config/db.yml` with any desired changes (defaults use SQLite)
+5. (Optional) Update `config/bot.yml` with any additional changes
+6. Build the image: `docker build -t chronicle-bot .`
+7. Run Chronicle in Docker with `docker run --rm --name chronicle chronicle-bot`
+8. Invite the bot user to a room, and `!ping` to make sure it's working!
 
 # Contribute
 

@@ -1,0 +1,19 @@
+# SQLite Configuration
+adapter:  'sqlite3'
+database: 'db/chronicle-bot.db'
+
+# PostgreSQL Configuration
+# adapter:  'postgresql'
+# database: 'chronicle-bot'
+# host:     'localhost:1234'
+# username: 'chronicle'
+# password: 'ch4ng3m3'
+# encoding: 'utf8'
+
+# MySQL Configuration
+# adapter:  'mysql2'
+# database: 'chronicle-bot'
+# host:     'localhost:1234'
+# username: 'chronicle'
+# password: 'ch4ng3m3'
+# encoding: 'utf8'
