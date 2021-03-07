@@ -1,4 +1,4 @@
-class CreateCustomCommands < ActiveRecord::Migration[5.2]
+class CreateCustomCommands < ActiveRecord::Migration[6.1]
   def up
     create_table :custom_commands do |table|
       table.string :roomid

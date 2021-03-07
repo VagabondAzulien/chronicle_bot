@@ -9,3 +9,5 @@ gem "activerecord", "~> 6.1"
 gem "rake", "~> 13.0"
 
 gem "sqlite3", "~> 1.4"
+
+gem "yard", "~> 0.9.26"
