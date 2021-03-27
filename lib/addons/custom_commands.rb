@@ -10,10 +10,13 @@ require 'json'
 
 module Chronicle
   module Addon
+    # Custom Commander handles all custom command management
+    #
+    # @param bot [Chronicle] The instance of Chronicle for this addon
     class CustomCommander
       def self.register(bot)
         addon_instance = new(bot)
-        addon_command = ['addcommand','modcommand','remcommand']
+        addon_command = %w[addcommand modcommand remcommand]
 
         [addon_instance, addon_command]
       end
@@ -32,11 +35,11 @@ module Chronicle
         cmd = message.content[:body].split(/\s+/)[1].gsub(/#{pfx}/, '')
 
         case cmd
-        when "addcommand"
+        when 'addcommand'
           cmd_add_usage
-        when "modcommand"
+        when 'modcommand'
           cmd_mod_usage
-        when "remcommand"
+        when 'remcommand'
           cmd_rem_usage
         else
           cmd_custom_usage(cmd)
@@ -54,18 +57,16 @@ module Chronicle
                         .gsub(/#{pfx}\w+\s*/, '')
                         .strip
 
-        res = 'Invalid command'
-
-        case cmd
-        when "addcommand"
-          res = handle_addcommand(roomid, msgstr)
-        when "modcommand"
-          res = handle_modcommand(roomid, msgstr)
-        when "remcommand"
-          res = handle_remcommand(roomid, msgstr)
-        else
-          res = handle_runcommand(roomid, cmd)
-        end
+        res = case cmd
+              when 'addcommand'
+                handle_addcommand(roomid, msgstr)
+              when 'modcommand'
+                handle_modcommand(roomid, msgstr)
+              when 'remcommand'
+                handle_remcommand(roomid, msgstr)
+              else
+                handle_runcommand(roomid, cmd)
+              end
 
         room = @bot.client.ensure_room(roomid)
 
@@ -211,12 +212,12 @@ module Chronicle
 
         unless cc.save
           @bot.scribe.info('CustomCommander') {
-            "Problem modifying: #{command}. Not saved." 
+            "Problem modifying: #{command}. Not saved."
           }
 
           return cc.errors.objects.first.full_message
         end
-        
+
         @bot.scribe.info('CustomCommander') {
           "Custom command updated: #{command}"
         }
@@ -248,12 +249,12 @@ module Chronicle
 
         unless cc.save
           @bot.scribe.info('CustomCommander') {
-            "Duplicate command: #{command}. Not saved." 
+            "Duplicate command: #{command}. Not saved."
           }
 
           return cc.errors.objects.first.full_message
         end
-        
+
         @bot.scribe.info('CustomCommander') {
           "Custom command saved: #{command}"
         }
