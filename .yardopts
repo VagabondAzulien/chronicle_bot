@@ -1,5 +1,4 @@
 --protected
 --private
 -
-wiki/database.md
-wiki/addons.md
+wiki/**/*.md
